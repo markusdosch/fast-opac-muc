@@ -1,0 +1,3 @@
+- Use `nvm use` to use Node.js
+- Testing: Use the built-in Node.js test runner
+- Write TypeScript code. As strict as possible, no `any`.
