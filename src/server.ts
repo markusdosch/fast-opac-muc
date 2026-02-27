@@ -1,4 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { readFile } from "node:fs/promises";
 
 const OPAC_BASE = "https://ssl.muenchen.de";
 const OPAC_HOME = `${OPAC_BASE}/aDISWeb/app?service=direct/0/Home/$DirectLink&sp=SOPAC`;
@@ -217,6 +218,18 @@ function sendJson(
   res.end(JSON.stringify(body));
 }
 
+async function handleIndex(res: ServerResponse): Promise<void> {
+  try {
+    const htmlPath = new URL("index.html", import.meta.url);
+    const html = await readFile(htmlPath, "utf-8");
+    setCorsHeaders(res);
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    res.end(html);
+  } catch {
+    sendJson(res, 500, { error: "Failed to read index.html" });
+  }
+}
+
 async function handleSearch(
   req: IncomingMessage,
   res: ServerResponse,
@@ -249,6 +262,11 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
     setCorsHeaders(res);
     res.writeHead(204);
     res.end();
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/") {
+    handleIndex(res);
     return;
   }
 

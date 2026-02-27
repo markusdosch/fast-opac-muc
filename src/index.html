@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>fastOPAC</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f1f1f1;
+    color: #333;
+    min-height: 100dvh;
+  }
+
+  header {
+    background: #0170AA;
+    color: #fff;
+    padding: 14px 16px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  header span { font-weight: 300; opacity: .75; }
+
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  .search-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  #q {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 1rem;
+    border: 2px solid #CAD4DE;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  #q:focus { border-color: #0170AA; }
+
+  #search-btn {
+    padding: 10px 18px;
+    background: #0170AA;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  #search-btn:active { background: #015a88; }
+
+  .spinner {
+    display: none;
+    width: 18px;
+    height: 18px;
+    animation: spin .7s linear infinite;
+  }
+  .spinner.visible { display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #branch {
+    margin-top: 10px;
+    width: 100%;
+    padding: 9px 12px;
+    font-size: .95rem;
+    border: 2px solid #CAD4DE;
+    border-radius: 6px;
+    background: #fff;
+    outline: none;
+  }
+  #branch:focus { border-color: #0170AA; }
+
+  #status {
+    margin-top: 14px;
+    font-size: .9rem;
+    color: #666;
+    min-height: 1.4em;
+  }
+  #status.error { color: #c0392b; }
+
+  #results {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    list-style: none;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    display: flex;
+    gap: 12px;
+  }
+
+  .card-cover {
+    width: 56px;
+    min-height: 72px;
+    border-radius: 4px;
+    object-fit: cover;
+    background: #e8e8e8;
+    flex-shrink: 0;
+  }
+
+  .card-body { flex: 1; min-width: 0; }
+
+  .card-title {
+    font-weight: 600;
+    font-size: .95rem;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .card-meta {
+    margin-top: 4px;
+    font-size: .82rem;
+    color: #666;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .card-bottom {
+    margin-top: 6px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-size: .72rem;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .badge-available { background: #d4edda; color: #155724; }
+  .badge-unavailable { background: #f8d7da; color: #721c24; }
+  .badge-media { background: #e2e8f0; color: #475569; }
+</style>
+</head>
+<body>
+
+<header>fast<span>OPAC</span></header>
+
+<div class="container">
+  <form id="search-form" class="search-row">
+    <input id="q" type="search" placeholder="Titel, Autor, Stichwort …" autocomplete="off" required>
+    <button id="search-btn" type="submit">
+      <svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round">
+        <path d="M12 2a10 10 0 0 1 10 10"/>
+      </svg>
+      Suchen
+    </button>
+  </form>
+
+  <select id="branch">
+    <option value="">Alle Zweigstellen</option>
+    <option value="Neuperlach">Neuperlach</option>
+  </select>
+
+  <div id="status"></div>
+  <ul id="results"></ul>
+</div>
+
+<script>
+  const form = document.getElementById("search-form");
+  const input = document.getElementById("q");
+  const branchSel = document.getElementById("branch");
+  const statusEl = document.getElementById("status");
+  const resultsList = document.getElementById("results");
+  const spinner = document.querySelector(".spinner");
+
+  let controller = null;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const q = input.value.trim();
+    if (!q) return;
+
+    if (controller) controller.abort();
+    controller = new AbortController();
+
+    spinner.classList.add("visible");
+    statusEl.textContent = "";
+    statusEl.classList.remove("error");
+    resultsList.innerHTML = "";
+
+    const params = new URLSearchParams({ q });
+    const branch = branchSel.value;
+    if (branch) params.set("branch", branch);
+
+    try {
+      const res = await fetch("/api/search?" + params, { signal: controller.signal });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Fehler " + res.status);
+      }
+      const data = await res.json();
+      render(data);
+    } catch (err) {
+      if (err.name === "AbortError") return;
+      statusEl.textContent = err.message;
+      statusEl.classList.add("error");
+    } finally {
+      spinner.classList.remove("visible");
+      controller = null;
+    }
+  });
+
+  function render(data) {
+    statusEl.textContent = data.totalHits + " Treffer";
+    if (data.items.length === 0) {
+      statusEl.textContent = "Keine Treffer";
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+    for (const item of data.items) {
+      const li = document.createElement("li");
+      li.className = "card";
+
+      const hasCover = item.coverUrl && item.coverUrl.length > 0;
+      const coverHtml = hasCover
+        ? '<img class="card-cover" src="' + escHtml(item.coverUrl) + '" alt="" loading="lazy">'
+        : '<div class="card-cover"></div>';
+
+      const availBadge = item.available
+        ? '<span class="badge badge-available">Verfügbar</span>'
+        : '<span class="badge badge-unavailable">Entliehen</span>';
+
+      const mediaBadge = item.mediaType
+        ? '<span class="badge badge-media">' + escHtml(item.mediaType) + '</span>'
+        : '';
+
+      li.innerHTML =
+        coverHtml +
+        '<div class="card-body">' +
+          '<div class="card-title">' + escHtml(item.title) + '</div>' +
+          '<div class="card-meta">' + escHtml(item.author) + (item.year ? ' · ' + escHtml(item.year) : '') + '</div>' +
+          '<div class="card-bottom">' + availBadge + mediaBadge + '</div>' +
+        '</div>';
+
+      fragment.appendChild(li);
+    }
+    resultsList.appendChild(fragment);
+  }
+
+  function escHtml(s) {
+    const d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+</script>
+
+</body>
+</html>
