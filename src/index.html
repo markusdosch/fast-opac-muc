@@ -192,6 +192,16 @@
   const resultsList = document.getElementById("results");
   const spinner = document.querySelector(".spinner");
 
+  const savedBranch = new URLSearchParams(location.search).get("branch");
+  if (savedBranch) branchSel.value = savedBranch;
+
+  branchSel.addEventListener("change", () => {
+    const url = new URL(location.href);
+    if (branchSel.value) url.searchParams.set("branch", branchSel.value);
+    else url.searchParams.delete("branch");
+    history.replaceState(null, "", url);
+  });
+
   let controller = null;
 
   form.addEventListener("submit", async (e) => {
