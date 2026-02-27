@@ -21,8 +21,12 @@
     font-size: 1.25rem;
     font-weight: 700;
     letter-spacing: 0.02em;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
   }
   header span { font-weight: 300; opacity: .75; }
+  header .tagline { font-size: .75rem; font-weight: 400; opacity: .7; letter-spacing: 0; margin-left: 10px; }
 
   .container {
     max-width: 600px;
@@ -162,7 +166,7 @@
 </head>
 <body>
 
-<header>fast<span>OPAC</span></header>
+<header>fast<span>OPAC</span><span class="tagline">Schnelle Suche für den Katalog der Münchner Stadtbibliothek</span></header>
 
 <div class="container">
   <form id="search-form" class="search-row">
