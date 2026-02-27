@@ -103,8 +103,6 @@
     border-radius: 8px;
     padding: 12px;
     box-shadow: 0 1px 3px rgba(0,0,0,.08);
-    display: flex;
-    gap: 12px;
   }
 
   .card-cover {
@@ -153,6 +151,13 @@
   .badge-available { background: #d4edda; color: #155724; }
   .badge-unavailable { background: #f8d7da; color: #721c24; }
   .badge-media { background: #e2e8f0; color: #475569; }
+
+  .card-link {
+    display: flex;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+  }
 </style>
 </head>
 <body>
@@ -249,13 +254,17 @@
         ? '<span class="badge badge-media">' + escHtml(item.mediaType) + '</span>'
         : '';
 
+      const detailUrl = 'https://ssl.muenchen.de/aDISWeb/app?service=direct/0/Home/$DirectLink&sp=SOPAC&sp=S' + encodeURIComponent(item.id);
+
       li.innerHTML =
+        '<a class="card-link" href="' + escHtml(detailUrl) + '" target="_blank" rel="noopener">' +
         coverHtml +
         '<div class="card-body">' +
           '<div class="card-title">' + escHtml(item.title) + '</div>' +
           '<div class="card-meta">' + escHtml(item.author) + (item.year ? ' · ' + escHtml(item.year) : '') + '</div>' +
           '<div class="card-bottom">' + availBadge + mediaBadge + '</div>' +
-        '</div>';
+        '</div>' +
+        '</a>';
 
       fragment.appendChild(li);
     }
