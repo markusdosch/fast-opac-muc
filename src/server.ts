@@ -1,4 +1,8 @@
-import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import {
+  createServer,
+  type IncomingMessage,
+  type ServerResponse,
+} from "node:http";
 import { readFile } from "node:fs/promises";
 
 const OPAC_BASE = "https://ssl.muenchen.de";
@@ -122,7 +126,7 @@ async function search(
 }
 
 export function parseResults(html: string): SearchResponse {
-  const totalMatch = html.match(/Treffer:\s*\d+-\d+\s+von\s+(\d+)/);
+  const totalMatch = html.match(/Treffer:\s*\d+-\s*\d+\s+von\s+(\d+)/);
   const totalHits = totalMatch ? parseInt(totalMatch[1], 10) : 0;
 
   const items: SearchResult[] = [];
@@ -148,16 +152,12 @@ export function parseResults(html: string): SearchResponse {
     const yearMatch = block.match(/rList_jahr">\s*(\d{4})\s*<\/div>/);
     const year = yearMatch ? yearMatch[1] : "";
 
-    const availMatch = block.match(
-      /rList_availability[\s\S]*?alt='([^']+)'/,
-    );
+    const availMatch = block.match(/rList_availability[\s\S]*?alt='([^']+)'/);
     const available = availMatch
       ? !availMatch[1].toLowerCase().includes("nicht")
       : false;
 
-    const mediaMatch = block.match(
-      /rList_medium[\s\S]*?alt='([^']+)'/,
-    );
+    const mediaMatch = block.match(/rList_medium[\s\S]*?alt='([^']+)'/);
     const mediaType = mediaMatch ? decodeHtmlEntities(mediaMatch[1]) : "";
 
     const sigMatch = block.match(/rList_sig">\s*([\s\S]*?)\s*<\/div>/);
@@ -285,8 +285,7 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
 export const server = createServer(handleRequest);
 
 const isMainModule =
-  process.argv[1] &&
-  import.meta.url === `file://${process.argv[1]}`;
+  process.argv[1] && import.meta.url === `file://${process.argv[1]}`;
 
 if (isMainModule) {
   const PORT = parseInt(process.env["PORT"] ?? "3000", 10);
