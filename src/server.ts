@@ -204,6 +204,45 @@ function decodeHtmlEntities(text: string): string {
     .replace(/&szlig;/g, "ß");
 }
 
+// --- Cover Proxy ---
+
+async function handleCoverProxy(
+  req: IncomingMessage,
+  res: ServerResponse,
+): Promise<void> {
+  const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
+  const rest = url.pathname.replace(/^\/coverproxy\//, "");
+
+  if (!rest) {
+    sendJson(res, 400, { error: "Missing image path" });
+    return;
+  }
+
+  const referer = currentJSessionId
+    ? `${OPAC_BASE}/aDISWeb/app;jsessionid=${currentJSessionId}`
+    : `${OPAC_BASE}/aDISWeb/app`;
+
+  const upstream = await fetch(`${OPAC_BASE}/${rest}`, {
+    headers: { Referer: referer },
+  });
+
+  if (!upstream.ok) {
+    res.writeHead(upstream.status);
+    res.end();
+    return;
+  }
+
+  const contentType = upstream.headers.get("Content-Type") ?? "application/octet-stream";
+
+  res.writeHead(200, {
+    "Content-Type": contentType,
+    "Cache-Control": "public, max-age=31536000, immutable",
+  });
+
+  const body = await upstream.arrayBuffer();
+  res.end(Buffer.from(body));
+}
+
 // --- HTTP Server ---
 
 function setCorsHeaders(res: ServerResponse): void {
@@ -251,6 +290,11 @@ async function handleSearch(
   try {
     const session = await startSession();
     const results = await search(session, q, branch);
+    for (const item of results.items) {
+      if (item.coverUrl.startsWith(`${OPAC_BASE}/`)) {
+        item.coverUrl = "/coverproxy/" + item.coverUrl.slice(OPAC_BASE.length + 1);
+      }
+    }
     sendJson(res, 200, results as unknown as Record<string, unknown>);
   } catch {
     sendJson(res, 502, {
@@ -279,6 +323,14 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
       sendJson(res, 502, {
         error: "Failed to fetch results from library system",
       });
+    });
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname.startsWith("/coverproxy/")) {
+    handleCoverProxy(req, res).catch(() => {
+      res.writeHead(502);
+      res.end();
     });
     return;
   }
