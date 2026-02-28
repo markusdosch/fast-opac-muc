@@ -34,6 +34,8 @@ interface SearchResponse {
   items: SearchResult[];
 }
 
+let currentJSessionId: string | null = null;
+
 // --- OPAC Client ---
 
 async function startSession(): Promise<Session> {
@@ -65,6 +67,8 @@ async function startSession(): Promise<Session> {
   if (!form0Match) {
     throw new Error("Could not extract Form0 value from OPAC home page");
   }
+
+  currentJSessionId = jsessionidMatch[1];
 
   return {
     jsessionid: jsessionidMatch[1],
