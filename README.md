@@ -1,10 +1,12 @@
 # fastOPAC
 
+🌐 **Visit on [fastOPAC.21solutions.de](https://fastopac.21solutions.de)** 🌐
+
 An alternative search UI for the catalog of the Münchner Stadtbibliothek (Munich Public Library) — faster and with a better mobile experience.
 
 For the official, full-featured search, visit [ssl.muenchen.de](https://ssl.muenchen.de).
 
-![Screenshot](docs/screenshot.png)
+<img src="docs/screenshot.png" height="600"/>
 
 ## Disclaimer
 
