@@ -4,7 +4,7 @@ An alternative search UI for the catalog of the Münchner Stadtbibliothek (Munic
 
 For the official, full-featured search, visit [ssl.muenchen.de](https://ssl.muenchen.de).
 
-![Screenshot](screenshot.png)
+![Screenshot](docs/screenshot.png)
 
 ## Disclaimer
 
