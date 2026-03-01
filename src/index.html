@@ -12,6 +12,8 @@
     background: #f1f1f1;
     color: #333;
     min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
   }
 
   header {
@@ -31,6 +33,7 @@
   header .tagline { font-size: .75rem; font-weight: 400; opacity: .7; letter-spacing: 0; }
 
   .container {
+    width: 100%;
     max-width: 600px;
     margin: 0 auto;
     padding: 16px;
@@ -171,11 +174,58 @@
     text-decoration: none;
     color: inherit;
   }
+
+  footer {
+    max-width: 600px;
+    margin: auto auto 0;
+    padding: 16px;
+    font-size: .78rem;
+    color: #888;
+    text-align: center;
+    line-height: 1.5;
+  }
+  footer a { color: #0170AA; }
+
+  .info-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    opacity: .8;
+    padding: 0 2px;
+  }
+  .info-btn:hover { opacity: 1; }
+
+  .disclaimer-dialog {
+    margin: auto;
+    max-width: 440px;
+    border: none;
+    border-radius: 10px;
+    padding: 24px;
+    font-size: .9rem;
+    line-height: 1.6;
+    color: #333;
+    box-shadow: 0 8px 30px rgba(0,0,0,.15);
+  }
+  .disclaimer-dialog::backdrop { background: rgba(0,0,0,.4); }
+  .disclaimer-dialog a { color: #0170AA; }
+  .disclaimer-dialog .close-btn {
+    display: block;
+    margin: 16px auto 0;
+    padding: 6px 20px;
+    background: #0170AA;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: .9rem;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
 
-<header><a href="/" class="brand">fast<span>OPAC</span></a><span class="tagline">Schnelle Suche für den Katalog der Münchner Stadtbibliothek</span></header>
+<header><a href="/" class="brand">fast<span>OPAC</span></a><span class="tagline">Schnelle Suche für den Katalog der Münchner Stadtbibliothek</span><button class="info-btn" id="info-btn" title="Info">ℹ️</button></header>
 
 <div class="container">
   <form id="search-form" class="search-row">
@@ -233,6 +283,15 @@
   <div id="status"></div>
   <ul id="results"></ul>
 </div>
+
+<footer>
+  <a href="https://www.markusdosch.com/legal/">Kontakt &amp; Impressum</a>
+</footer>
+
+<dialog class="disclaimer-dialog" id="disclaimer-dialog">
+  <p>Dies ist kein offizielles Angebot der Münchner Stadtbibliothek (privates Fan-Projekt, nicht verbunden oder unterstützt). Für die offizielle Suche mit vollem Funktionsumfang: <a href="https://ssl.muenchen.de" target="_blank" rel="noopener">ssl.muenchen.de</a></p>
+  <button class="close-btn" id="close-dialog">Schließen</button>
+</dialog>
 
 <script>
   const form = document.getElementById("search-form");
@@ -337,6 +396,17 @@
       resultsList.appendChild(notice);
     }
   }
+
+  document.getElementById("info-btn").addEventListener("click", () => {
+    document.getElementById("disclaimer-dialog").showModal();
+  });
+  const dialog = document.getElementById("disclaimer-dialog");
+  document.getElementById("close-dialog").addEventListener("click", () => {
+    dialog.close();
+  });
+  dialog.addEventListener("click", (e) => {
+    if (e.target === dialog) dialog.close();
+  });
 
   function escHtml(s) {
     const d = document.createElement("div");
