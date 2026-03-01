@@ -151,14 +151,4 @@ describe("HTTP server", () => {
     assert.equal(body.error, "Not found");
   });
 
-  it("handles CORS preflight", async () => {
-    const res = await fetch(`${baseUrl}/api/search`, { method: "OPTIONS" });
-    assert.equal(res.status, 204);
-    assert.equal(res.headers.get("access-control-allow-origin"), "*");
-  });
-
-  it("sets CORS headers on JSON responses", async () => {
-    const res = await fetch(`${baseUrl}/api/search`);
-    assert.equal(res.headers.get("access-control-allow-origin"), "*");
-  });
 });

@@ -232,7 +232,8 @@ async function handleCoverProxy(
     return;
   }
 
-  const contentType = upstream.headers.get("Content-Type") ?? "application/octet-stream";
+  const contentType =
+    upstream.headers.get("Content-Type") ?? "application/octet-stream";
 
   res.writeHead(200, {
     "Content-Type": contentType,
@@ -245,18 +246,11 @@ async function handleCoverProxy(
 
 // --- HTTP Server ---
 
-function setCorsHeaders(res: ServerResponse): void {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-}
-
 function sendJson(
   res: ServerResponse,
   status: number,
   body: Record<string, unknown>,
 ): void {
-  setCorsHeaders(res);
   res.writeHead(status, { "Content-Type": "application/json" });
   res.end(JSON.stringify(body));
 }
@@ -265,7 +259,6 @@ async function handleIndex(res: ServerResponse): Promise<void> {
   try {
     const htmlPath = new URL("index.html", import.meta.url);
     const html = await readFile(htmlPath, "utf-8");
-    setCorsHeaders(res);
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
     res.end(html);
   } catch {
@@ -292,7 +285,8 @@ async function handleSearch(
     const results = await search(session, q, branch);
     for (const item of results.items) {
       if (item.coverUrl.startsWith(`${OPAC_BASE}/`)) {
-        item.coverUrl = "/coverproxy/" + item.coverUrl.slice(OPAC_BASE.length + 1);
+        item.coverUrl =
+          "/coverproxy/" + item.coverUrl.slice(OPAC_BASE.length + 1);
       }
     }
     sendJson(res, 200, results as unknown as Record<string, unknown>);
@@ -305,13 +299,6 @@ async function handleSearch(
 
 function handleRequest(req: IncomingMessage, res: ServerResponse): void {
   const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
-
-  if (req.method === "OPTIONS") {
-    setCorsHeaders(res);
-    res.writeHead(204);
-    res.end();
-    return;
-  }
 
   if (req.method === "GET" && url.pathname === "/") {
     handleIndex(res);
