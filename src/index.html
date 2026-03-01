@@ -186,17 +186,6 @@
   }
   footer a { color: #0170AA; }
 
-  .info-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1rem;
-    line-height: 1;
-    opacity: .8;
-    padding: 0 2px;
-  }
-  .info-btn:hover { opacity: 1; }
-
   .disclaimer-dialog {
     margin: auto;
     max-width: 440px;
@@ -225,7 +214,7 @@
 </head>
 <body>
 
-<header><a href="/" class="brand">fast<span>OPAC</span></a><span class="tagline">Schnelle Suche für den Katalog der Münchner Stadtbibliothek</span><button class="info-btn" id="info-btn" title="Info">ℹ️</button></header>
+<header><a href="/" class="brand">fast<span>OPAC</span></a><span class="tagline">Schnelle Suche für den Katalog der Münchner Stadtbibliothek</span></header>
 
 <div class="container">
   <form id="search-form" class="search-row">
@@ -285,7 +274,7 @@
 </div>
 
 <footer>
-  <a href="https://www.markusdosch.com/legal/">Kontakt &amp; Impressum</a>
+  <a href="#" id="disclaimer-link">Disclaimer</a> · <a href="https://www.markusdosch.com/legal/">Kontakt &amp; Impressum</a>
 </footer>
 
 <dialog class="disclaimer-dialog" id="disclaimer-dialog">
@@ -397,7 +386,8 @@
     }
   }
 
-  document.getElementById("info-btn").addEventListener("click", () => {
+  document.getElementById("disclaimer-link").addEventListener("click", (e) => {
+    e.preventDefault();
     document.getElementById("disclaimer-dialog").showModal();
   });
   const dialog = document.getElementById("disclaimer-dialog");

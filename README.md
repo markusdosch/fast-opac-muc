@@ -1,28 +1,21 @@
-# fast-opac-muc
+# fastOPAC
 
-A fast REST API proxy for the Munich public library system (Münchner Stadtbibliothek).
+An alternative search UI for the catalog of the Münchner Stadtbibliothek (Munich Public Library) — faster and with a better mobile experience.
 
-## Usage
+For the official, full-featured search, visit [ssl.muenchen.de](https://ssl.muenchen.de).
+
+![Screenshot](screenshot.png)
+
+## Disclaimer
+
+This is **not** an official offering of the Münchner Stadtbibliothek. It is a private fan project, not affiliated with or endorsed by the library.
+
+## Development
 
 ```bash
 nvm use
 npm start
 ```
-
-```bash
-curl "http://localhost:3000/api/search?q=Harry+Potter&branch=Neuperlach"
-```
-
-## API
-
-### `GET /api/search`
-
-| Param    | Required | Description                                |
-|----------|----------|--------------------------------------------|
-| `q`      | yes      | Search query                               |
-| `branch` | no       | Branch name filter (e.g. "Neuperlach")     |
-
-## Development
 
 ```bash
 npm test
