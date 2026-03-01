@@ -96,6 +96,13 @@
   }
   #status.error { color: #c0392b; }
 
+  .truncation-notice {
+    text-align: center;
+    color: #666;
+    font-size: 0.95rem;
+    padding: 1rem;
+  }
+
   #results {
     margin-top: 12px;
     display: flex;
@@ -322,6 +329,13 @@
       fragment.appendChild(li);
     }
     resultsList.appendChild(fragment);
+
+    if (data.items.length < data.totalHits) {
+      const notice = document.createElement("li");
+      notice.className = "truncation-notice";
+      notice.textContent = "Aus technischen Gründen werden aktuell nur die ersten " + data.items.length + " von " + data.totalHits + " Ergebnissen angezeigt. Wir arbeiten daran!";
+      resultsList.appendChild(notice);
+    }
   }
 
   function escHtml(s) {
