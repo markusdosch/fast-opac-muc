@@ -11,7 +11,6 @@ const OPAC_HOME = `${OPAC_BASE}/aDISWeb/app?service=direct/0/Home/$DirectLink&sp
 // --- Types ---
 
 interface PageData {
-  jsessionid: string;
   cookies: string[];
   formAction: string;
   formInputValues: Record<string, string>;
@@ -36,6 +35,28 @@ interface SearchResponse {
 
 // --- OPAC Client ---
 
+function extractPageData(html: string, cookies: string[]): PageData {
+  const formMatch = html.match(
+    /<form\s+method="post"\s+name="Form0"\s+action="([^"]+)"[^>]*>([\s\S]*?)<\/form>/,
+  );
+  if (!formMatch) {
+    throw new Error("Could not extract form from OPAC HTML");
+  }
+
+  const formAction = formMatch[1];
+  const formBody = formMatch[2];
+
+  const formInputValues: Record<string, string> = {};
+  const inputRegex =
+    /<input\s+type="hidden"\s+name="([^"]+)"(?:\s+value="([^"]*)")?[^>]*>/g;
+  let inputMatch;
+  while ((inputMatch = inputRegex.exec(formBody)) !== null) {
+    formInputValues[inputMatch[1]] = inputMatch[2] ?? "";
+  }
+
+  return { cookies, formAction, formInputValues };
+}
+
 async function visitLandingPage(): Promise<PageData> {
   const response = await fetch(OPAC_HOME, { redirect: "follow" });
   if (!response.ok) {
@@ -50,44 +71,15 @@ async function visitLandingPage(): Promise<PageData> {
   }
 
   const html = await response.text();
-
-  const jsessionidMatch = html.match(/jsessionid=([A-F0-9]+)/);
-  if (!jsessionidMatch) {
-    throw new Error("Could not extract jsessionid from OPAC home page");
-  }
-
-  const formMatch = html.match(
-    /<form\s+method="post"\s+name="Form0"\s+action="([^"]+)"[^>]*>([\s\S]*?)<\/form>/,
-  );
-  if (!formMatch) {
-    throw new Error("Could not extract form from OPAC home page");
-  }
-
-  const formAction = formMatch[1];
-  const formBody = formMatch[2];
-
-  const formInputValues: Record<string, string> = {};
-  const inputRegex =
-    /<input\s+type="hidden"\s+name="([^"]+)"(?:\s+value="([^"]*)")?[^>]*>/g;
-  let inputMatch;
-  while ((inputMatch = inputRegex.exec(formBody)) !== null) {
-    formInputValues[inputMatch[1]] = inputMatch[2] ?? "";
-  }
-
-  return {
-    jsessionid: jsessionidMatch[1],
-    cookies,
-    formAction,
-    formInputValues,
-  };
+  return extractPageData(html, cookies);
 }
 
 async function doSearch(
   data: PageData,
   query: string,
   branch?: string,
-): Promise<SearchResponse> {
-  const url = `${OPAC_BASE}/aDISWeb/app;jsessionid=${data.jsessionid}`;
+): Promise<{ results: SearchResponse; pageData: PageData }> {
+  const url = `${OPAC_BASE}${data.formAction}`;
 
   const params = new URLSearchParams();
   for (const [name, value] of Object.entries(data.formInputValues)) {
@@ -115,7 +107,10 @@ async function doSearch(
   }
 
   const html = await response.text();
-  return parseResults(html);
+  return {
+    results: parseResults(html),
+    pageData: extractPageData(html, data.cookies),
+  };
 }
 
 export function parseResults(html: string): SearchResponse {
@@ -277,14 +272,14 @@ async function handleSearch(
 
   try {
     const data = await visitLandingPage();
-    const results = await doSearch(data, q, branch);
+    const { results, pageData } = await doSearch(data, q, branch);
     for (const item of results.items) {
       if (item.coverUrl.startsWith(`${OPAC_BASE}/`)) {
         item.coverUrl =
           "/coverproxy/" +
           item.coverUrl.slice(OPAC_BASE.length + 1) +
           "?jsessionid=" +
-          data.jsessionid;
+          pageData.formAction.match(/jsessionid=([A-F0-9]+)/)![1];
       }
     }
     sendJson(res, 200, results as unknown as Record<string, unknown>);
