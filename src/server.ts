@@ -78,6 +78,7 @@ async function doSearch(
   data: PageData,
   query: string,
   branch?: string,
+  extraParams?: Record<string, string>,
 ): Promise<{ results: SearchResponse; pageData: PageData; hasNextPage: boolean }> {
   const url = `${OPAC_BASE}${data.formAction}`;
 
@@ -87,6 +88,11 @@ async function doSearch(
   }
   params.set("$Autosuggest", query);
   params.set("select", branch ?? "Bitte auswählen");
+  if (extraParams) {
+    for (const [name, value] of Object.entries(extraParams)) {
+      params.set(name, value);
+    }
+  }
 
   const headers: Record<string, string> = {
     "Content-Type": "application/x-www-form-urlencoded",
@@ -276,7 +282,21 @@ async function handleSearch(
 
   try {
     const data = await visitLandingPage();
-    const { results, pageData, hasNextPage: _hasNextPage } = await doSearch(data, q, branch);
+    let { results, pageData, hasNextPage } = await doSearch(data, q, branch);
+
+    if (availableOnly) {
+      results.items = results.items.filter((item) => item.available);
+      while (results.items.length < 22 && hasNextPage) {
+        const next = await doSearch(pageData, q, branch, {
+          "$Toolbar$0_3.x": "29",
+          "$Toolbar$0_3.y": "28",
+        });
+        results.items.push(...next.results.items.filter((item) => item.available));
+        pageData = next.pageData;
+        hasNextPage = next.hasNextPage;
+      }
+    }
+
     for (const item of results.items) {
       if (item.coverUrl.startsWith(`${OPAC_BASE}/`)) {
         item.coverUrl =
@@ -285,9 +305,6 @@ async function handleSearch(
           "?jsessionid=" +
           pageData.formAction.match(/jsessionid=([A-F0-9]+)/)![1];
       }
-    }
-    if (availableOnly) {
-      results.items = results.items.filter((item) => item.available);
     }
     sendJson(res, 200, results as unknown as Record<string, unknown>);
   } catch {
