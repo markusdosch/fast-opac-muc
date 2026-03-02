@@ -34,8 +34,6 @@ interface SearchResponse {
   items: SearchResult[];
 }
 
-let currentJSessionId: string | null = null;
-
 // --- OPAC Client ---
 
 async function startSession(): Promise<Session> {
@@ -67,8 +65,6 @@ async function startSession(): Promise<Session> {
   if (!form0Match) {
     throw new Error("Could not extract Form0 value from OPAC home page");
   }
-
-  currentJSessionId = jsessionidMatch[1];
 
   return {
     jsessionid: jsessionidMatch[1],
@@ -218,9 +214,13 @@ async function handleCoverProxy(
     return;
   }
 
-  const referer = currentJSessionId
-    ? `${OPAC_BASE}/aDISWeb/app;jsessionid=${currentJSessionId}`
-    : `${OPAC_BASE}/aDISWeb/app`;
+  const jsessionid = url.searchParams.get("jsessionid");
+  if (!jsessionid) {
+    sendJson(res, 400, { error: "Missing required query parameter: jsessionid" });
+    return;
+  }
+
+  const referer = `${OPAC_BASE}/aDISWeb/app;jsessionid=${jsessionid}`;
 
   const upstream = await fetch(`${OPAC_BASE}/${rest}`, {
     headers: { Referer: referer },
@@ -286,7 +286,10 @@ async function handleSearch(
     for (const item of results.items) {
       if (item.coverUrl.startsWith(`${OPAC_BASE}/`)) {
         item.coverUrl =
-          "/coverproxy/" + item.coverUrl.slice(OPAC_BASE.length + 1);
+          "/coverproxy/" +
+          item.coverUrl.slice(OPAC_BASE.length + 1) +
+          "?jsessionid=" +
+          session.jsessionid;
       }
     }
     sendJson(res, 200, results as unknown as Record<string, unknown>);
