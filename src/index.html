@@ -300,8 +300,13 @@
   const resultsList = document.getElementById("results");
   const spinner = document.querySelector(".spinner");
 
-  const savedBranch = new URLSearchParams(location.search).get("branch");
+  const urlParams = new URLSearchParams(location.search);
+
+  const savedBranch = urlParams.get("branch");
   if (savedBranch) branchSel.value = savedBranch;
+
+  const savedQ = urlParams.get("q");
+  if (savedQ) input.value = savedQ;
 
   branchSel.addEventListener("change", () => {
     const url = new URL(location.href);
@@ -316,6 +321,10 @@
     e.preventDefault();
     const q = input.value.trim();
     if (!q) return;
+
+    const url = new URL(location.href);
+    url.searchParams.set("q", q);
+    history.replaceState(null, "", url);
 
     if (controller) controller.abort();
     controller = new AbortController();
@@ -346,6 +355,8 @@
       controller = null;
     }
   });
+
+  if (savedQ) form.requestSubmit();
 
   function render(data) {
     statusEl.textContent = data.totalHits + " Treffer";
