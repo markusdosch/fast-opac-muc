@@ -415,7 +415,12 @@
     }
     resultsList.appendChild(fragment);
 
-    if (data.items.length < data.totalHits) {
+    if (availableCb.checked) {
+      const notice = document.createElement("li");
+      notice.className = "truncation-notice";
+      notice.textContent = "Die Trefferzahl (" + data.totalHits + ") umfasst sowohl verfügbare als auch entliehene Medien.";
+      resultsList.appendChild(notice);
+    } else if (data.items.length < data.totalHits) {
       const notice = document.createElement("li");
       notice.className = "truncation-notice";
       notice.textContent = "Aus technischen Gründen werden aktuell nur die ersten " + data.items.length + " von " + data.totalHits + " Ergebnissen angezeigt. Wir arbeiten daran!";
