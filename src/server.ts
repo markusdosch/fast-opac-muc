@@ -10,11 +10,11 @@ const OPAC_HOME = `${OPAC_BASE}/aDISWeb/app?service=direct/0/Home/$DirectLink&sp
 
 // --- Types ---
 
-interface Session {
+interface LandingPageData {
   jsessionid: string;
-  service: string;
-  form0: string;
   cookies: string[];
+  formAction: string;
+  formInputValues: Record<string, string>;
 }
 
 interface SearchResult {
@@ -36,7 +36,7 @@ interface SearchResponse {
 
 // --- OPAC Client ---
 
-async function startSession(): Promise<Session> {
+async function visitLandingPage(): Promise<LandingPageData> {
   const response = await fetch(OPAC_HOME, { redirect: "follow" });
   if (!response.ok) {
     throw new Error(`Failed to load OPAC home: ${response.status}`);
@@ -56,57 +56,51 @@ async function startSession(): Promise<Session> {
     throw new Error("Could not extract jsessionid from OPAC home page");
   }
 
-  const serviceMatch = html.match(/name="service"\s+value="([^"]+)"/);
-  if (!serviceMatch) {
-    throw new Error("Could not extract service value from OPAC home page");
+  const formMatch = html.match(
+    /<form\s+method="post"\s+name="Form0"\s+action="([^"]+)"[^>]*>([\s\S]*?)<\/form>/,
+  );
+  if (!formMatch) {
+    throw new Error("Could not extract form from OPAC home page");
   }
 
-  const form0Match = html.match(/name="Form0"\s+value="([^"]+)"/);
-  if (!form0Match) {
-    throw new Error("Could not extract Form0 value from OPAC home page");
+  const formAction = formMatch[1];
+  const formBody = formMatch[2];
+
+  const formInputValues: Record<string, string> = {};
+  const inputRegex =
+    /<input\s+type="hidden"\s+name="([^"]+)"(?:\s+value="([^"]*)")?[^>]*>/g;
+  let inputMatch;
+  while ((inputMatch = inputRegex.exec(formBody)) !== null) {
+    formInputValues[inputMatch[1]] = inputMatch[2] ?? "";
   }
 
   return {
     jsessionid: jsessionidMatch[1],
-    service: serviceMatch[1],
-    form0: form0Match[1],
     cookies,
+    formAction,
+    formInputValues,
   };
 }
 
 async function search(
-  session: Session,
+  data: LandingPageData,
   query: string,
   branch?: string,
 ): Promise<SearchResponse> {
-  const url = `${OPAC_BASE}/aDISWeb/app;jsessionid=${session.jsessionid}`;
+  const url = `${OPAC_BASE}/aDISWeb/app;jsessionid=${data.jsessionid}`;
 
   const params = new URLSearchParams();
-  params.set("service", session.service);
-  params.set("sp", "S0");
-  params.set("Form0", session.form0);
-  params.set("focus", "$$GFBO_1");
-  params.set("keyCode", "82");
-  params.set("stz", "");
-  params.set("source", "");
-  params.set("selected", "");
-  params.set("requestCount", "0");
-  params.set("scriptEnabled", "true");
-  params.set("scrollPos", "0");
-  params.set("scrDim", "1680;1050");
-  params.set("winDim", "965;938");
-  params.set("imgDim", "");
-  params.set("$FormConditional", "T");
-  params.set("$FormConditional$0", "T");
-  params.set("SUO1_AUTHFU_1_hidden", "");
+  for (const [name, value] of Object.entries(data.formInputValues)) {
+    params.set(name, value);
+  }
   params.set("$Autosuggest", query);
   params.set("select", branch ?? "Bitte auswählen");
 
   const headers: Record<string, string> = {
     "Content-Type": "application/x-www-form-urlencoded",
   };
-  if (session.cookies.length > 0) {
-    headers["Cookie"] = session.cookies.join("; ");
+  if (data.cookies.length > 0) {
+    headers["Cookie"] = data.cookies.join("; ");
   }
 
   const response = await fetch(url, {
@@ -282,15 +276,15 @@ async function handleSearch(
   const branch = url.searchParams.get("branch") ?? undefined;
 
   try {
-    const session = await startSession();
-    const results = await search(session, q, branch);
+    const data = await visitLandingPage();
+    const results = await search(data, q, branch);
     for (const item of results.items) {
       if (item.coverUrl.startsWith(`${OPAC_BASE}/`)) {
         item.coverUrl =
           "/coverproxy/" +
           item.coverUrl.slice(OPAC_BASE.length + 1) +
           "?jsessionid=" +
-          session.jsessionid;
+          data.jsessionid;
       }
     }
     sendJson(res, 200, results as unknown as Record<string, unknown>);
