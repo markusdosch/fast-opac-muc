@@ -269,6 +269,7 @@ async function handleSearch(
   }
 
   const branch = url.searchParams.get("branch") ?? undefined;
+  const availableOnly = url.searchParams.get("available") === "true";
 
   try {
     const data = await visitLandingPage();
@@ -281,6 +282,9 @@ async function handleSearch(
           "?jsessionid=" +
           pageData.formAction.match(/jsessionid=([A-F0-9]+)/)![1];
       }
+    }
+    if (availableOnly) {
+      results.items = results.items.filter((item) => item.available);
     }
     sendJson(res, 200, results as unknown as Record<string, unknown>);
   } catch {

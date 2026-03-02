@@ -277,6 +277,10 @@
     <option value="Westend">Westend</option>
   </select>
 
+  <label style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:.95rem;cursor:pointer">
+    <input id="available" type="checkbox"> Nur verfügbare Medien
+  </label>
+
   <div id="status"></div>
   <ul id="results"></ul>
 </div>
@@ -296,6 +300,7 @@
   const form = document.getElementById("search-form");
   const input = document.getElementById("q");
   const branchSel = document.getElementById("branch");
+  const availableCb = document.getElementById("available");
   const statusEl = document.getElementById("status");
   const resultsList = document.getElementById("results");
   const spinner = document.querySelector(".spinner");
@@ -305,6 +310,9 @@
   const savedBranch = urlParams.get("branch");
   if (savedBranch) branchSel.value = savedBranch;
 
+  const savedAvailable = urlParams.get("available");
+  if (savedAvailable === "true") availableCb.checked = true;
+
   const savedQ = urlParams.get("q");
   if (savedQ) input.value = savedQ;
 
@@ -312,6 +320,13 @@
     const url = new URL(location.href);
     if (branchSel.value) url.searchParams.set("branch", branchSel.value);
     else url.searchParams.delete("branch");
+    history.replaceState(null, "", url);
+  });
+
+  availableCb.addEventListener("change", () => {
+    const url = new URL(location.href);
+    if (availableCb.checked) url.searchParams.set("available", "true");
+    else url.searchParams.delete("available");
     history.replaceState(null, "", url);
   });
 
@@ -337,6 +352,7 @@
     const params = new URLSearchParams({ q });
     const branch = branchSel.value;
     if (branch) params.set("branch", branch);
+    if (availableCb.checked) params.set("available", "true");
 
     try {
       const res = await fetch("/api/search?" + params, { signal: controller.signal });
