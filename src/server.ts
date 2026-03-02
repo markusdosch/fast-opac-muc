@@ -10,7 +10,7 @@ const OPAC_HOME = `${OPAC_BASE}/aDISWeb/app?service=direct/0/Home/$DirectLink&sp
 
 // --- Types ---
 
-interface LandingPageData {
+interface PageData {
   jsessionid: string;
   cookies: string[];
   formAction: string;
@@ -36,7 +36,7 @@ interface SearchResponse {
 
 // --- OPAC Client ---
 
-async function visitLandingPage(): Promise<LandingPageData> {
+async function visitLandingPage(): Promise<PageData> {
   const response = await fetch(OPAC_HOME, { redirect: "follow" });
   if (!response.ok) {
     throw new Error(`Failed to load OPAC home: ${response.status}`);
@@ -82,8 +82,8 @@ async function visitLandingPage(): Promise<LandingPageData> {
   };
 }
 
-async function search(
-  data: LandingPageData,
+async function doSearch(
+  data: PageData,
   query: string,
   branch?: string,
 ): Promise<SearchResponse> {
@@ -277,7 +277,7 @@ async function handleSearch(
 
   try {
     const data = await visitLandingPage();
-    const results = await search(data, q, branch);
+    const results = await doSearch(data, q, branch);
     for (const item of results.items) {
       if (item.coverUrl.startsWith(`${OPAC_BASE}/`)) {
         item.coverUrl =
