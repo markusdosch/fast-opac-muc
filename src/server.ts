@@ -78,7 +78,7 @@ async function doSearch(
   data: PageData,
   query: string,
   branch?: string,
-): Promise<{ results: SearchResponse; pageData: PageData }> {
+): Promise<{ results: SearchResponse; pageData: PageData; hasNextPage: boolean }> {
   const url = `${OPAC_BASE}${data.formAction}`;
 
   const params = new URLSearchParams();
@@ -107,9 +107,12 @@ async function doSearch(
   }
 
   const html = await response.text();
+  const nextBtnMatch = html.match(/<input\s[^>]*name="\$Toolbar\$0_3"[^>]*>/);
+  const hasNextPage = nextBtnMatch ? !/\bdisabled\b/.test(nextBtnMatch[0]) : false;
   return {
     results: parseResults(html),
     pageData: extractPageData(html, data.cookies),
+    hasNextPage,
   };
 }
 
@@ -273,7 +276,7 @@ async function handleSearch(
 
   try {
     const data = await visitLandingPage();
-    const { results, pageData } = await doSearch(data, q, branch);
+    const { results, pageData, hasNextPage: _hasNextPage } = await doSearch(data, q, branch);
     for (const item of results.items) {
       if (item.coverUrl.startsWith(`${OPAC_BASE}/`)) {
         item.coverUrl =
