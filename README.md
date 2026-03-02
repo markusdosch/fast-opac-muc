@@ -20,5 +20,10 @@ npm start
 ```
 
 ```bash
+# with server auto-restart on file change
+npm run dev
+```
+
+```bash
 npm test
 ```

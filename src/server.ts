@@ -101,7 +101,6 @@ async function search(
   params.set("SUO1_AUTHFU_1_hidden", "");
   params.set("$Autosuggest", query);
   params.set("select", branch ?? "Bitte auswählen");
-  params.set("textButton", "Suchen");
 
   const headers: Record<string, string> = {
     "Content-Type": "application/x-www-form-urlencoded",
@@ -216,7 +215,9 @@ async function handleCoverProxy(
 
   const jsessionid = url.searchParams.get("jsessionid");
   if (!jsessionid) {
-    sendJson(res, 400, { error: "Missing required query parameter: jsessionid" });
+    sendJson(res, 400, {
+      error: "Missing required query parameter: jsessionid",
+    });
     return;
   }
 
