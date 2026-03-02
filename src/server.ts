@@ -286,7 +286,7 @@ async function handleSearch(
 
     if (availableOnly) {
       results.items = results.items.filter((item) => item.available);
-      while (results.items.length < 22 && hasNextPage) {
+      while (hasNextPage) {
         const next = await doSearch(pageData, q, branch, {
           "$Toolbar$0_3.x": "29",
           "$Toolbar$0_3.y": "28",
@@ -295,6 +295,7 @@ async function handleSearch(
         pageData = next.pageData;
         hasNextPage = next.hasNextPage;
       }
+      results.totalHits = results.items.length;
     }
 
     for (const item of results.items) {
