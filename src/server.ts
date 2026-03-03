@@ -297,7 +297,9 @@ async function handleSearch(
       }
       // totalHits reflects the OPAC's unfiltered count; cap it to the actual
       // number of available items we collected, so the UI doesn't overstate results.
-      results.totalHits = Math.min(results.items.length, results.totalHits);
+      if (results.items.length < 22) {
+        results.totalHits = results.items.length;
+      }
     }
 
     for (const item of results.items) {
