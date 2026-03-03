@@ -321,6 +321,7 @@
     if (branchSel.value) url.searchParams.set("branch", branchSel.value);
     else url.searchParams.delete("branch");
     history.replaceState(null, "", url);
+    if (input.value.trim()) form.requestSubmit();
   });
 
   availableCb.addEventListener("change", () => {
@@ -328,6 +329,7 @@
     if (availableCb.checked) url.searchParams.set("available", "true");
     else url.searchParams.delete("available");
     history.replaceState(null, "", url);
+    if (input.value.trim()) form.requestSubmit();
   });
 
   let controller = null;
