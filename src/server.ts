@@ -295,6 +295,9 @@ async function handleSearch(
         pageData = next.pageData;
         hasNextPage = next.hasNextPage;
       }
+      // totalHits reflects the OPAC's unfiltered count; cap it to the actual
+      // number of available items we collected, so the UI doesn't overstate results.
+      results.totalHits = Math.min(results.items.length, results.totalHits);
     }
 
     for (const item of results.items) {

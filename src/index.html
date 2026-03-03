@@ -394,6 +394,9 @@
       statusEl.textContent = "Keine Treffer";
       return;
     }
+    if (availableCb.checked && data.items.length < data.totalHits) {
+      statusEl.textContent = `mind. ${data.items.length} Ergebnisse`;
+    }
 
     const fragment = document.createDocumentFragment();
     for (const item of data.items) {
@@ -429,15 +432,14 @@
     }
     resultsList.appendChild(fragment);
 
-    if (availableCb.checked) {
+    if (data.items.length < data.totalHits) {
       const notice = document.createElement("li");
       notice.className = "truncation-notice";
-      notice.textContent = "Die Trefferzahl (" + data.totalHits + ") umfasst sowohl verfügbare als auch entliehene Medien.";
-      resultsList.appendChild(notice);
-    } else if (data.items.length < data.totalHits) {
-      const notice = document.createElement("li");
-      notice.className = "truncation-notice";
-      notice.textContent = "Aus technischen Gründen werden aktuell nur die ersten " + data.items.length + " von " + data.totalHits + " Ergebnissen angezeigt. Wir arbeiten daran!";
+      if (availableCb.checked) {
+        notice.textContent = "Aus technischen Gründen werden aktuell nur die ersten " + data.items.length + " Ergebnisse angezeigt. Insgesamt gibt es " + data.totalHits + " Treffer (verfügbar und nicht verfügbar) - die genaue Anzahl nur verfügbarer Medien kann leider noch nicht ermittelt werden.";
+      } else {
+        notice.textContent = "Aus technischen Gründen werden aktuell nur die ersten " + data.items.length + " von " + data.totalHits + " Ergebnissen angezeigt.";
+      }
       resultsList.appendChild(notice);
     }
   }
