@@ -38,7 +38,9 @@
   }
   header .brand { text-decoration: none; color: inherit; }
   header .brand span { font-weight: 300; opacity: .75; }
-  header .tagline { font-size: .75rem; font-weight: 400; opacity: .7; letter-spacing: 0; }
+  header .warum-link { font-size: .78rem; font-weight: 400; color: #fff; opacity: .85; text-decoration: none; }
+  header .warum-link:hover { opacity: 1; text-decoration: underline; }
+  header .tagline { font-size: .75rem; font-weight: 400; opacity: .7; letter-spacing: 0; width: 100%; }
 
   .container {
     width: 100%;
@@ -222,7 +224,11 @@
 </head>
 <body>
 
-<header><a href="/" class="brand">fast<span>OPAC</span></a><span class="tagline">Schnelle Suche für den Katalog der Münchner Stadtbibliothek</span></header>
+<header>
+  <a href="/" class="brand">fast<span>OPAC</span></a>
+  <a href="#" class="warum-link" id="warum-link">Warum?</a>
+  <div class="tagline">Schnelle Suche für den Katalog der Münchner Stadtbibliothek</div>
+</header>
 
 <div class="container">
   <form id="search-form" class="search-row">
@@ -294,6 +300,12 @@
 <dialog class="disclaimer-dialog" id="disclaimer-dialog">
   <p>Dies ist kein offizielles Angebot der Münchner Stadtbibliothek (privates Fan-Projekt, nicht verbunden oder unterstützt). Für die offizielle Suche mit vollem Funktionsumfang: <a href="https://ssl.muenchen.de" target="_blank" rel="noopener">ssl.muenchen.de</a></p>
   <button class="close-btn" id="close-dialog">Schließen</button>
+</dialog>
+
+<dialog class="disclaimer-dialog" id="warum-dialog">
+  <p><a href="https://www.markusdosch.com" target="_blank" rel="noopener">Ich</a> bin ein großer Fan der Münchner Stadtbibliothek. Leider ist die offizielle Suche der Stadtbibliothek (<a href="https://ssl.muenchen.de" target="_blank" rel="noopener">ssl.muenchen.de</a>) etwas umständlich – sie ist langsam, man muss häufig klicken, und es gibt keinen Filter, um nach verfügbaren Büchern zu filtern!</p>
+  <p style="margin-top:12px">Deshalb habe ich das <a href="https://github.com/markusdosch/fast-opac-muc" target="_blank" rel="noopener">Open Source</a> Projekt fastOPAC gebaut – eine Idee, wie man die Suche verbessern könnte. Vielleicht eine Inspiration für die Stadtbibliothek?</p>
+  <button class="close-btn" id="close-warum-dialog">Schließen</button>
 </dialog>
 
 <script>
@@ -440,6 +452,18 @@
   });
   dialog.addEventListener("click", (e) => {
     if (e.target === dialog) dialog.close();
+  });
+
+  document.getElementById("warum-link").addEventListener("click", (e) => {
+    e.preventDefault();
+    document.getElementById("warum-dialog").showModal();
+  });
+  const warumDialog = document.getElementById("warum-dialog");
+  document.getElementById("close-warum-dialog").addEventListener("click", () => {
+    warumDialog.close();
+  });
+  warumDialog.addEventListener("click", (e) => {
+    if (e.target === warumDialog) warumDialog.close();
   });
 
   function escHtml(s) {
