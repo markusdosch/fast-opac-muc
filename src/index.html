@@ -176,6 +176,7 @@
   }
   .badge-available { background: #d4edda; color: #155724; }
   .badge-unavailable { background: #f8d7da; color: #721c24; }
+  .badge-unknown { background: #fff3cd; color: #856404; }
   .badge-media { background: #e2e8f0; color: #475569; }
 
   .card-link {
@@ -408,9 +409,11 @@
         ? '<img class="card-cover" src="' + escHtml(item.coverUrl) + '" alt="" loading="lazy">'
         : '<div class="card-cover"></div>';
 
-      const availBadge = item.available
+      const availBadge = item.available === "available"
         ? '<span class="badge badge-available">Verfügbar</span>'
-        : '<span class="badge badge-unavailable">Entliehen</span>';
+        : item.available === "unavailable"
+        ? '<span class="badge badge-unavailable">Entliehen</span>'
+        : '<span class="badge badge-unknown">Verfügbarkeit unbekannt</span>';
 
       const mediaBadge = item.mediaType
         ? '<span class="badge badge-media">' + escHtml(item.mediaType) + '</span>'

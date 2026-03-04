@@ -22,7 +22,7 @@ interface SearchResult {
   title: string;
   author: string;
   year: string;
-  available: boolean;
+  available: "available" | "unavailable" | "unknown";
   mediaType: string;
   signature: string;
   coverUrl: string;
@@ -150,9 +150,11 @@ export function parseResults(html: string): SearchResponse {
     const year = yearMatch ? yearMatch[1] : "";
 
     const availMatch = block.match(/rList_availability[\s\S]*?alt='([^']+)'/);
-    const available = availMatch
-      ? !availMatch[1].toLowerCase().includes("nicht")
-      : false;
+    const availText = availMatch ? decodeHtmlEntities(availMatch[1]) : "";
+    const available: SearchResult["available"] =
+      availText === "Verfügbar" ? "available"
+      : availText === "Zurzeit nicht verfügbar" ? "unavailable"
+      : "unknown";
 
     const mediaMatch = block.match(/rList_medium[\s\S]*?alt='([^']+)'/);
     const mediaType = mediaMatch ? decodeHtmlEntities(mediaMatch[1]) : "";
@@ -285,13 +287,13 @@ async function handleSearch(
     let { results, pageData, hasNextPage } = await doSearch(data, q, branch);
 
     if (availableOnly) {
-      results.items = results.items.filter((item) => item.available);
+      results.items = results.items.filter((item) => item.available !== "unavailable");
       while (results.items.length < 22 && hasNextPage) {
         const next = await doSearch(pageData, q, branch, {
           "$Toolbar$0_3.x": "29",
           "$Toolbar$0_3.y": "28",
         });
-        results.items.push(...next.results.items.filter((item) => item.available));
+        results.items.push(...next.results.items.filter((item) => item.available !== "unavailable"));
         pageData = next.pageData;
         hasNextPage = next.hasNextPage;
       }
