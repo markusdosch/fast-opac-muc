@@ -1,9 +1,6 @@
-import {
-  createServer,
-  type IncomingMessage,
-  type ServerResponse,
-} from "node:http";
-import { readFile } from "node:fs/promises";
+import express, { type Request, type Response } from "express";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 
 const OPAC_BASE = "https://ssl.muenchen.de";
 const OPAC_HOME = `${OPAC_BASE}/aDISWeb/app?service=direct/0/Home/$DirectLink&sp=SOPAC`;
@@ -199,88 +196,18 @@ function decodeHtmlEntities(text: string): string {
     .replace(/&szlig;/g, "ß");
 }
 
-// --- Cover Proxy ---
+// --- Route Handlers ---
 
-async function handleCoverProxy(
-  req: IncomingMessage,
-  res: ServerResponse,
-): Promise<void> {
-  const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
-  const rest = url.pathname.replace(/^\/coverproxy\//, "");
+async function handleSearch(req: Request, res: Response): Promise<void> {
+  const q = req.query["q"];
 
-  if (!rest) {
-    sendJson(res, 400, { error: "Missing image path" });
+  if (!q || typeof q !== "string") {
+    res.status(400).json({ error: "Missing required query parameter: q" });
     return;
   }
 
-  const jsessionid = url.searchParams.get("jsessionid");
-  if (!jsessionid) {
-    sendJson(res, 400, {
-      error: "Missing required query parameter: jsessionid",
-    });
-    return;
-  }
-
-  const referer = `${OPAC_BASE}/aDISWeb/app;jsessionid=${jsessionid}`;
-
-  const upstream = await fetch(`${OPAC_BASE}/${rest}`, {
-    headers: { Referer: referer },
-  });
-
-  if (!upstream.ok) {
-    res.writeHead(upstream.status);
-    res.end();
-    return;
-  }
-
-  const contentType =
-    upstream.headers.get("Content-Type") ?? "application/octet-stream";
-
-  res.writeHead(200, {
-    "Content-Type": contentType,
-    "Cache-Control": "public, max-age=31536000, immutable",
-  });
-
-  const body = await upstream.arrayBuffer();
-  res.end(Buffer.from(body));
-}
-
-// --- HTTP Server ---
-
-function sendJson(
-  res: ServerResponse,
-  status: number,
-  body: Record<string, unknown>,
-): void {
-  res.writeHead(status, { "Content-Type": "application/json" });
-  res.end(JSON.stringify(body));
-}
-
-async function handleIndex(res: ServerResponse): Promise<void> {
-  try {
-    const htmlPath = new URL("index.html", import.meta.url);
-    const html = await readFile(htmlPath, "utf-8");
-    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(html);
-  } catch {
-    sendJson(res, 500, { error: "Failed to read index.html" });
-  }
-}
-
-async function handleSearch(
-  req: IncomingMessage,
-  res: ServerResponse,
-): Promise<void> {
-  const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
-  const q = url.searchParams.get("q");
-
-  if (!q) {
-    sendJson(res, 400, { error: "Missing required query parameter: q" });
-    return;
-  }
-
-  const branch = url.searchParams.get("branch") ?? undefined;
-  const availableOnly = url.searchParams.get("available") === "true";
+  const branch = typeof req.query["branch"] === "string" ? req.query["branch"] : undefined;
+  const availableOnly = req.query["available"] === "true";
 
   try {
     const data = await visitLandingPage();
@@ -297,8 +224,6 @@ async function handleSearch(
         pageData = next.pageData;
         hasNextPage = next.hasNextPage;
       }
-      // totalHits reflects the OPAC's unfiltered count; cap it to the actual
-      // number of available items we collected, so the UI doesn't overstate results.
       if (results.items.length < 22) {
         results.totalHits = results.items.length;
       }
@@ -313,50 +238,85 @@ async function handleSearch(
           pageData.formAction.match(/jsessionid=([A-F0-9]+)/)![1];
       }
     }
-    sendJson(res, 200, results as unknown as Record<string, unknown>);
+    res.json(results);
   } catch {
-    sendJson(res, 502, {
+    res.status(502).json({
       error: "Failed to fetch results from library system",
     });
   }
 }
 
-function handleRequest(req: IncomingMessage, res: ServerResponse): void {
-  const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
+async function handleCoverProxy(req: Request, res: Response): Promise<void> {
+  const rest = req.path.replace(/^\/coverproxy\//, "");
 
-  if (req.method === "GET" && url.pathname === "/") {
-    handleIndex(res);
+  if (!rest) {
+    res.status(400).json({ error: "Missing image path" });
     return;
   }
 
-  if (req.method === "GET" && url.pathname === "/api/search") {
-    handleSearch(req, res).catch(() => {
-      sendJson(res, 502, {
-        error: "Failed to fetch results from library system",
-      });
+  const jsessionid = req.query["jsessionid"];
+  if (!jsessionid || typeof jsessionid !== "string") {
+    res.status(400).json({
+      error: "Missing required query parameter: jsessionid",
     });
     return;
   }
 
-  if (req.method === "GET" && url.pathname.startsWith("/coverproxy/")) {
-    handleCoverProxy(req, res).catch(() => {
-      res.writeHead(502);
-      res.end();
-    });
+  const referer = `${OPAC_BASE}/aDISWeb/app;jsessionid=${jsessionid}`;
+
+  const upstream = await fetch(`${OPAC_BASE}/${rest}`, {
+    headers: { Referer: referer },
+  });
+
+  if (!upstream.ok) {
+    res.status(upstream.status).end();
     return;
   }
 
-  sendJson(res, 404, { error: "Not found" });
+  const contentType =
+    upstream.headers.get("Content-Type") ?? "application/octet-stream";
+
+  res.set({
+    "Content-Type": contentType,
+    "Cache-Control": "public, max-age=31536000, immutable",
+  });
+
+  const body = await upstream.arrayBuffer();
+  res.send(Buffer.from(body));
 }
 
-export const server = createServer(handleRequest);
+// --- Express App ---
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+export const app = express();
+
+app.use(express.static(path.join(__dirname, "public")));
+
+app.get("/api/search", (req, res) => {
+  handleSearch(req, res).catch(() => {
+    res.status(502).json({
+      error: "Failed to fetch results from library system",
+    });
+  });
+});
+
+app.get("/coverproxy/*path", (req, res) => {
+  handleCoverProxy(req, res).catch(() => {
+    res.status(502).end();
+  });
+});
+
+app.use((_req: Request, res: Response) => {
+  res.status(404).json({ error: "Not found" });
+});
 
 const isMainModule =
   process.argv[1] && import.meta.url === `file://${process.argv[1]}`;
 
 if (isMainModule) {
   const PORT = parseInt(process.env["PORT"] ?? "3000", 10);
-  server.listen(PORT, () => {
+  app.listen(PORT, () => {
     console.log(`Server listening on http://localhost:${PORT}`);
   });
 }

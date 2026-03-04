@@ -1,6 +1,7 @@
 import { describe, it, after, before } from "node:test";
 import assert from "node:assert/strict";
-import { parseResults, server } from "./server.ts";
+import type { Server } from "node:http";
+import { parseResults, app } from "./server.ts";
 
 // --- HTML Fixtures (from actual OPAC responses) ---
 
@@ -113,19 +114,17 @@ describe("parseResults", () => {
 // --- HTTP Endpoint Tests ---
 
 describe("HTTP server", () => {
-  const port = 0; // use random port
   let baseUrl: string;
+  let server: Server;
 
   before(() => {
     return new Promise<void>((resolve) => {
-      server.close(() => {
-        server.listen(0, () => {
-          const addr = server.address();
-          if (addr && typeof addr === "object") {
-            baseUrl = `http://localhost:${addr.port}`;
-          }
-          resolve();
-        });
+      server = app.listen(0, () => {
+        const addr = server.address();
+        if (addr && typeof addr === "object") {
+          baseUrl = `http://localhost:${addr.port}`;
+        }
+        resolve();
       });
     });
   });
