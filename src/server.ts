@@ -196,9 +196,15 @@ function decodeHtmlEntities(text: string): string {
     .replace(/&szlig;/g, "ß");
 }
 
-// --- Route Handlers ---
+// --- Express App ---
 
-async function handleSearch(req: Request, res: Response): Promise<void> {
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+export const app = express();
+
+app.use(express.static(path.join(__dirname, "public")));
+
+app.get("/api/search", async (req, res) => {
   const q = req.query["q"];
 
   if (!q || typeof q !== "string") {
@@ -244,67 +250,49 @@ async function handleSearch(req: Request, res: Response): Promise<void> {
       error: "Failed to fetch results from library system",
     });
   }
-}
-
-async function handleCoverProxy(req: Request, res: Response): Promise<void> {
-  const rest = req.path.replace(/^\/coverproxy\//, "");
-
-  if (!rest) {
-    res.status(400).json({ error: "Missing image path" });
-    return;
-  }
-
-  const jsessionid = req.query["jsessionid"];
-  if (!jsessionid || typeof jsessionid !== "string") {
-    res.status(400).json({
-      error: "Missing required query parameter: jsessionid",
-    });
-    return;
-  }
-
-  const referer = `${OPAC_BASE}/aDISWeb/app;jsessionid=${jsessionid}`;
-
-  const upstream = await fetch(`${OPAC_BASE}/${rest}`, {
-    headers: { Referer: referer },
-  });
-
-  if (!upstream.ok) {
-    res.status(upstream.status).end();
-    return;
-  }
-
-  const contentType =
-    upstream.headers.get("Content-Type") ?? "application/octet-stream";
-
-  res.set({
-    "Content-Type": contentType,
-    "Cache-Control": "public, max-age=31536000, immutable",
-  });
-
-  const body = await upstream.arrayBuffer();
-  res.send(Buffer.from(body));
-}
-
-// --- Express App ---
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-export const app = express();
-
-app.use(express.static(path.join(__dirname, "public")));
-
-app.get("/api/search", (req, res) => {
-  handleSearch(req, res).catch(() => {
-    res.status(502).json({
-      error: "Failed to fetch results from library system",
-    });
-  });
 });
 
-app.get("/coverproxy/*path", (req, res) => {
-  handleCoverProxy(req, res).catch(() => {
+app.get("/coverproxy/*path", async (req, res) => {
+  try {
+    const rest = req.path.replace(/^\/coverproxy\//, "");
+
+    if (!rest) {
+      res.status(400).json({ error: "Missing image path" });
+      return;
+    }
+
+    const jsessionid = req.query["jsessionid"];
+    if (!jsessionid || typeof jsessionid !== "string") {
+      res.status(400).json({
+        error: "Missing required query parameter: jsessionid",
+      });
+      return;
+    }
+
+    const referer = `${OPAC_BASE}/aDISWeb/app;jsessionid=${jsessionid}`;
+
+    const upstream = await fetch(`${OPAC_BASE}/${rest}`, {
+      headers: { Referer: referer },
+    });
+
+    if (!upstream.ok) {
+      res.status(upstream.status).end();
+      return;
+    }
+
+    const contentType =
+      upstream.headers.get("Content-Type") ?? "application/octet-stream";
+
+    res.set({
+      "Content-Type": contentType,
+      "Cache-Control": "public, max-age=31536000, immutable",
+    });
+
+    const body = await upstream.arrayBuffer();
+    res.send(Buffer.from(body));
+  } catch {
     res.status(502).end();
-  });
+  }
 });
 
 app.use((_req: Request, res: Response) => {
