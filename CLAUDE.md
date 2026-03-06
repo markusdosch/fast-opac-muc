@@ -1,3 +1,4 @@
 - Use `nvm use` to use Node.js
 - Testing: Use the built-in Node.js test runner
-- Write TypeScript code. As strict as possible, no `any`.
+- Backend code (e.g. `src/server.ts`): Write TypeScript code. As strict as possible, no `any`.
+- Frontend code (e.g. `src/public/index.html`): Write JavaScript code with JSDoc for type hints.
