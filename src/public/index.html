@@ -316,13 +316,18 @@
 </dialog>
 
 <script>
-  const form = document.getElementById("search-form");
-  const input = document.getElementById("q");
-  const branchSel = document.getElementById("branch");
-  const availableCb = document.getElementById("available");
-  const statusEl = document.getElementById("status");
-  const resultsList = document.getElementById("results");
-  const spinner = document.querySelector(".spinner");
+  /**
+   * @typedef {{ id: string; title: string; author: string; year: string; available: "available" | "unavailable" | "unknown"; mediaType: string; coverUrl: string }} SearchResult
+   * @typedef {{ totalHits: number; items: SearchResult[] }} SearchResponse
+   */
+
+  const form = /** @type {HTMLFormElement} */ (document.getElementById("search-form"));
+  const input = /** @type {HTMLInputElement} */ (document.getElementById("q"));
+  const branchSel = /** @type {HTMLSelectElement} */ (document.getElementById("branch"));
+  const availableCb = /** @type {HTMLInputElement} */ (document.getElementById("available"));
+  const statusEl = /** @type {HTMLElement} */ (document.getElementById("status"));
+  const resultsList = /** @type {HTMLUListElement} */ (document.getElementById("results"));
+  const spinner = /** @type {HTMLElement} */ (document.querySelector(".spinner"));
 
   const urlParams = new URLSearchParams(location.search);
 
@@ -351,6 +356,7 @@
     if (input.value.trim()) form.requestSubmit();
   });
 
+  /** @type {AbortController | null} */
   let controller = null;
 
   form.addEventListener("submit", async (e) => {
@@ -395,6 +401,7 @@
 
   if (savedQ) form.requestSubmit();
 
+  /** @param {SearchResponse} data */
   function render(data) {
     statusEl.textContent = data.totalHits + " Treffer";
     if (data.items.length === 0) {
@@ -457,7 +464,7 @@
     e.preventDefault();
     document.getElementById("disclaimer-dialog").showModal();
   });
-  const dialog = document.getElementById("disclaimer-dialog");
+  const dialog = /** @type {HTMLDialogElement} */ (document.getElementById("disclaimer-dialog"));
   document.getElementById("close-dialog").addEventListener("click", () => {
     dialog.close();
   });
@@ -469,7 +476,7 @@
     e.preventDefault();
     document.getElementById("warum-dialog").showModal();
   });
-  const warumDialog = document.getElementById("warum-dialog");
+  const warumDialog = /** @type {HTMLDialogElement} */ (document.getElementById("warum-dialog"));
   document.getElementById("close-warum-dialog").addEventListener("click", () => {
     warumDialog.close();
   });
