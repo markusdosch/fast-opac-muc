@@ -290,9 +290,12 @@
     <option value="Westend">Westend</option>
   </select>
 
-  <label style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:.95rem;cursor:pointer">
-    <input id="available" type="checkbox"> Nur verfügbare Medien
-  </label>
+  <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 16px;margin-top:10px">
+    <label style="display:flex;align-items:center;gap:6px;font-size:.95rem;cursor:pointer">
+      <input id="available" type="checkbox"> Nur verfügbare Medien
+    </label>
+    <a href="#" id="tipps-link" style="font-size:.95rem;color:#0170AA">Such-Tipps</a>
+  </div>
 
   <div id="status"></div>
   <ul id="results"></ul>
@@ -313,6 +316,15 @@
   <p><a href="https://www.markusdosch.com" target="_blank" rel="noopener">Ich</a> bin ein großer Fan der Münchner Stadtbibliothek. Leider ist die offizielle Suche der Stadtbibliothek (<a href="https://ssl.muenchen.de" target="_blank" rel="noopener">ssl.muenchen.de</a>) etwas umständlich – sie ist langsam, man muss häufig klicken, und es gibt keinen Filter, um nach verfügbaren Büchern zu filtern!</p>
   <p style="margin-top:12px">Deshalb habe ich das <a href="https://github.com/markusdosch/fast-opac-muc" target="_blank" rel="noopener">Open Source</a> Projekt fastOPAC gebaut – eine Idee, wie man die Suche verbessern könnte. Vielleicht eine Inspiration für die Stadtbibliothek?</p>
   <button class="close-btn" id="close-warum-dialog">Schließen</button>
+</dialog>
+
+<dialog class="disclaimer-dialog" id="tipps-dialog">
+  <p><strong>Such-Tipps</strong></p>
+  <ul style="margin-top:12px;padding-left:20px;display:flex;flex-direction:column;gap:12px">
+    <li>Um z.B. nur nach Büchern zu suchen, ist ein guter Weg, einfach „Buch" als Suchbegriff hinzuzufügen. Das funktioniert genauso für andere Medientypen wie z.&nbsp;B. „E-Book" oder „CD". Leider ist es technisch schwierig, hierfür eine eigene Filteroption anzubieten.</li>
+    <li><strong>Bestellung von Medien:</strong> Was viele nicht wissen - selbst wenn ein Medium nicht im Bestand einer Zweigstelle ist, kann man es aus einer anderen Zweigstelle in die eigene bestellen. Es lohnt sich also, den Zweigstellen-Filter immer mal wieder auf „Alle Zweigstellen" zu stellen. Die Bestellung ist kostenlos, solange man „Benachrichtigung per E-Mail" auswählt. Sonst wird man per Brief benachrichtigt, wofür Portokosten anfallen.</li>
+  </ul>
+  <button class="close-btn" id="close-tipps-dialog">Schließen</button>
 </dialog>
 
 <script>
@@ -482,6 +494,18 @@
   });
   warumDialog.addEventListener("click", (e) => {
     if (e.target === warumDialog) warumDialog.close();
+  });
+
+  document.getElementById("tipps-link").addEventListener("click", (e) => {
+    e.preventDefault();
+    document.getElementById("tipps-dialog").showModal();
+  });
+  const tippsDialog = /** @type {HTMLDialogElement} */ (document.getElementById("tipps-dialog"));
+  document.getElementById("close-tipps-dialog").addEventListener("click", () => {
+    tippsDialog.close();
+  });
+  tippsDialog.addEventListener("click", (e) => {
+    if (e.target === tippsDialog) tippsDialog.close();
   });
 
   function escHtml(s) {
