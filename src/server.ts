@@ -235,15 +235,20 @@ app.get("/api/search", async (req, res) => {
       }
     }
 
+    const jsessionid = pageData.formAction.match(/jsessionid=([A-F0-9]+)/)![1];
+
     for (const item of results.items) {
       if (item.coverUrl.startsWith(`${OPAC_BASE}/`)) {
         item.coverUrl =
-          "/coverproxy/" +
-          item.coverUrl.slice(OPAC_BASE.length + 1) +
-          "?jsessionid=" +
-          pageData.formAction.match(/jsessionid=([A-F0-9]+)/)![1];
+          "/coverproxy/" + item.coverUrl.slice(OPAC_BASE.length + 1);
       }
     }
+
+    res.cookie("jsessionid", jsessionid, {
+      httpOnly: true,
+      sameSite: "strict",
+      path: "/coverproxy",
+    });
     res.json(results);
   } catch {
     res.status(502).json({
@@ -261,10 +266,16 @@ app.get("/coverproxy/*path", async (req, res) => {
       return;
     }
 
-    const jsessionid = req.query["jsessionid"];
-    if (!jsessionid || typeof jsessionid !== "string") {
+    const cookieHeader = req.headers["cookie"] ?? "";
+    const jsessionid = cookieHeader
+      .split(";")
+      .map((c) => c.trim())
+      .find((c) => c.startsWith("jsessionid="))
+      ?.slice("jsessionid=".length);
+
+    if (!jsessionid) {
       res.status(400).json({
-        error: "Missing required query parameter: jsessionid",
+        error: "Missing required cookie: jsessionid",
       });
       return;
     }
