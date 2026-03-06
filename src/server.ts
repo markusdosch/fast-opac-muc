@@ -135,7 +135,7 @@ export function parseResults(html: string): SearchResponse {
     const id = liMatch[1];
     const block = liMatch[2];
 
-    const titleMatch = block.match(/rList_titel">\s*<a[^>]*>([^<]+)<\/a>/);
+    const titleMatch = block.match(/rList_titel">\s*<a[^>]*>([\s\S]+?)<\/a>/);
     const title = titleMatch ? titleMatch[1].trim() : "";
 
     const authorMatch = block.match(

@@ -15,6 +15,13 @@ const RESULTS_HTML = `
 </ul>
 `;
 
+const TITLE_WITH_ANGLE_BRACKETS_HTML = `
+<p class="info">Treffer:  1-1 von 1</p>
+<ul class="rList">
+<li class="rList_li rList_li_even rList_cover_active rList_cover_right" data-ajax="AK04651444"><div class="rList_cover"><div style="" class="rList_col rList_img"><img alt="" title="" src="/aDISWeb/assets/placeholder.gif" data-err="/aDISWeb/assets/placeholder.gif" data-src="https://ssl.muenchen.de/vlb/cover/test/s" class="img-delayed"/></div>	</div>	<div class="rList_grid_wrapper"><div class="rList_grid"><div style="width: 06%;" class="rList_col rList_num">1</div>		<div style="width: 06%;" class="rList_col rList_availability"><span><img class='icon'  src='/aDISWeb_kopac86/img/icons/availability-green.svg' alt='Verf&#0252;gbar' title='Verf&#0252;gbar' /></span></div>		<div style="width: 70%;" class="rList_col rList_titel"><a href="javascript:htmlOnLink('AK04651444')">[Desplat, Alexandre <1961->. Filmmusik. Auswahl] Paris - Hollywood</a></div>		<div style="width: 18%;" class="rList_col rList_jahr">2019</div>	</div>	<div class="rList_grid"><div style="width: 12%;" class="rList_col rList_medium"><img class='icon'  src='/aDISWeb_kopac86/img/medien/buch.svg' alt='CD' title='CD' /></div>		<div style="width: 70%;" class="rList_col rList_name">Alexandre Desplat</div>		<div style="width: 18%;" class="rList_col rList_sig">CD</div>	</div>	<div class="rList_grid"><div style="width: 06%;" class="rList_col rList_name">&nbsp;</div></div></div></li>
+</ul>
+`;
+
 const EMPTY_HTML = `<html><body><p>Keine Treffer gefunden</p></body></html>`;
 
 // --- Unit Tests for parseResults ---
@@ -101,6 +108,14 @@ describe("parseResults", () => {
     assert.equal(
       result.items[0].coverUrl,
       "https://ssl.muenchen.de/vlb/cover/9783551559258/s",
+    );
+  });
+
+  it("extracts title containing angle brackets", () => {
+    const result = parseResults(TITLE_WITH_ANGLE_BRACKETS_HTML);
+    assert.equal(
+      result.items[0].title,
+      "[Desplat, Alexandre <1961->. Filmmusik. Auswahl] Paris - Hollywood",
     );
   });
 
