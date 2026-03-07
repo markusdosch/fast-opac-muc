@@ -227,6 +227,32 @@
     font-size: .9rem;
     cursor: pointer;
   }
+
+  @media (prefers-color-scheme: dark) {
+    body { background: #1a1a1a; color: #e0e0e0; }
+    header { background: #015a88; }
+    #q { border-color: #444; background: #2a2a2a; color: #e0e0e0; }
+    #q:focus { border-color: #4db8e8; }
+    #branch { border-color: #444; background: #2a2a2a; color: #e0e0e0; }
+    #branch:focus { border-color: #4db8e8; }
+    #status { color: #aaa; }
+    #status.error { color: #e87c7c; }
+    .truncation-notice { color: #aaa; }
+    .card { background: #2a2a2a; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+    .card-cover { background: #3a3a3a; }
+    .card-meta { color: #aaa; }
+    .badge-available { background: #1a3a2a; color: #6fcf97; }
+    .badge-unavailable { background: #3a1a1a; color: #e87c7c; }
+    .badge-unknown { background: #3a3020; color: #d4a84b; }
+    .badge-media { background: #2a3040; color: #94a3b8; }
+    footer { color: #777; }
+    footer a { color: #4db8e8; }
+    footer svg path { fill: #e0e0e0; }
+    #tipps-link { color: #4db8e8 !important; }
+    .disclaimer-dialog { background: #2a2a2a; color: #e0e0e0; box-shadow: 0 8px 30px rgba(0,0,0,.4); }
+    .disclaimer-dialog::backdrop { background: rgba(0,0,0,.6); }
+    .disclaimer-dialog a { color: #4db8e8; }
+  }
 </style>
 </head>
 <body>
