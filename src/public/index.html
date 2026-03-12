@@ -414,6 +414,13 @@
     statusEl.classList.remove("error");
     resultsList.innerHTML = "";
 
+    if (availableCb.checked) {
+      const hint = document.createElement("li");
+      hint.style.cssText = "color:#666;font-size:.95rem;padding:12px 0";
+      hint.textContent = 'Wenn der Filter "Nur verfügbare Medien" aktiviert ist, kann die Suche deutlich länger dauern (bis zu 20-30s)';
+      resultsList.appendChild(hint);
+    }
+
     const params = new URLSearchParams({ q });
     const branch = branchSel.value;
     if (branch) params.set("branch", branch);
@@ -429,6 +436,7 @@
       render(data);
     } catch (err) {
       if (err.name === "AbortError") return;
+      resultsList.innerHTML = "";
       statusEl.textContent = err.message;
       statusEl.classList.add("error");
     } finally {
@@ -441,6 +449,7 @@
 
   /** @param {SearchResponse} data */
   function render(data) {
+    resultsList.innerHTML = "";
     statusEl.textContent = data.totalHits + " Treffer";
     if (data.items.length === 0) {
       statusEl.textContent = "Keine Treffer";
