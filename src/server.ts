@@ -141,18 +141,22 @@ export function parseResults(html: string): SearchResponse {
     const id = liMatch[1];
     const block = liMatch[2];
 
-    const titleMatch = block.match(/rList_titel">\s*<a[^>]*>([\s\S]+?)<\/a>/);
+    const titleMatch = block.match(
+      /rList_titel"[^>]*>\s*<a[^>]*>([\s\S]+?)<\/a>/,
+    );
     const title = titleMatch ? titleMatch[1].trim() : "";
 
     const authorMatch = block.match(
-      /rList_medium[\s\S]*?rList_name">\s*([\s\S]*?)\s*<\/div>/,
+      /rList_medium[\s\S]*?rList_name"[^>]*>\s*([\s\S]*?)\s*<\/div>/,
     );
     const author = authorMatch ? authorMatch[1].trim() : "";
 
-    const yearMatch = block.match(/rList_jahr">\s*(\d{4})\s*<\/div>/);
+    const yearMatch = block.match(/rList_jahr"[^>]*>\s*(\d{4})\s*<\/div>/);
     const year = yearMatch ? yearMatch[1] : "";
 
-    const availMatch = block.match(/rList_availability[\s\S]*?alt='([^']+)'/);
+    const availMatch = block.match(
+      /rList_availability[\s\S]*?alt=["']([^"']+)["']/,
+    );
     const availText = availMatch ? decodeHtmlEntities(availMatch[1]) : "";
     const available: SearchResult["available"] =
       availText === "Verfügbar"
@@ -161,14 +165,19 @@ export function parseResults(html: string): SearchResponse {
           ? "unavailable"
           : "unknown";
 
-    const mediaMatch = block.match(/rList_medium[\s\S]*?alt='([^']+)'/);
+    const mediaMatch = block.match(
+      /rList_medium[\s\S]*?alt=["']([^"']+)["']/,
+    );
     const mediaType = mediaMatch ? decodeHtmlEntities(mediaMatch[1]) : "";
 
-    const sigMatch = block.match(/rList_sig">\s*([\s\S]*?)\s*<\/div>/);
+    const sigMatch = block.match(/rList_sig"[^>]*>\s*([\s\S]*?)\s*<\/div>/);
     const signature = sigMatch ? sigMatch[1].trim() : "";
 
-    const coverMatch = block.match(/data-src="([^"]+)"/);
-    const coverUrl = coverMatch ? coverMatch[1] : "";
+    const coverMatch = block.match(/rList_img[\s\S]*?src="([^"]+)"/);
+    const coverUrl =
+      coverMatch && !coverMatch[1].includes("placeholder")
+        ? coverMatch[1]
+        : "";
 
     items.push({
       id,
