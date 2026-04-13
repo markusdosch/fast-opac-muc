@@ -34,7 +34,7 @@ interface SearchResponse {
 
 function extractPageData(html: string, cookies: string[]): PageData {
   const formMatch = html.match(
-    /<form\s+method="post"\s+name="Form0"\s+action="([^"]+)"[^>]*>([\s\S]*?)<\/form>/,
+    /<form\s(?=[^>]*method="post")[^>]*action="([^"]+)"[^>]*>([\s\S]*?)<\/form>/i,
   );
   if (!formMatch) {
     throw new Error("Could not extract form from OPAC HTML");
@@ -76,7 +76,11 @@ async function doSearch(
   query: string,
   branch?: string,
   extraParams?: Record<string, string>,
-): Promise<{ results: SearchResponse; pageData: PageData; hasNextPage: boolean }> {
+): Promise<{
+  results: SearchResponse;
+  pageData: PageData;
+  hasNextPage: boolean;
+}> {
   const url = `${OPAC_BASE}${data.formAction}`;
 
   const params = new URLSearchParams();
@@ -111,7 +115,9 @@ async function doSearch(
 
   const html = await response.text();
   const nextBtnMatch = html.match(/<input\s[^>]*name="\$Toolbar\$0_3"[^>]*>/);
-  const hasNextPage = nextBtnMatch ? !/\bdisabled\b/.test(nextBtnMatch[0]) : false;
+  const hasNextPage = nextBtnMatch
+    ? !/\bdisabled\b/.test(nextBtnMatch[0])
+    : false;
   return {
     results: parseResults(html),
     pageData: extractPageData(html, data.cookies),
@@ -149,9 +155,11 @@ export function parseResults(html: string): SearchResponse {
     const availMatch = block.match(/rList_availability[\s\S]*?alt='([^']+)'/);
     const availText = availMatch ? decodeHtmlEntities(availMatch[1]) : "";
     const available: SearchResult["available"] =
-      availText === "Verfügbar" ? "available"
-      : availText === "Zurzeit nicht verfügbar" ? "unavailable"
-      : "unknown";
+      availText === "Verfügbar"
+        ? "available"
+        : availText === "Zurzeit nicht verfügbar"
+          ? "unavailable"
+          : "unknown";
 
     const mediaMatch = block.match(/rList_medium[\s\S]*?alt='([^']+)'/);
     const mediaType = mediaMatch ? decodeHtmlEntities(mediaMatch[1]) : "";
@@ -212,7 +220,8 @@ app.get("/api/search", async (req, res) => {
     return;
   }
 
-  const branch = typeof req.query["branch"] === "string" ? req.query["branch"] : undefined;
+  const branch =
+    typeof req.query["branch"] === "string" ? req.query["branch"] : undefined;
   const availableOnly = req.query["available"] === "true";
 
   try {
@@ -220,13 +229,19 @@ app.get("/api/search", async (req, res) => {
     let { results, pageData, hasNextPage } = await doSearch(data, q, branch);
 
     if (availableOnly) {
-      results.items = results.items.filter((item) => item.available !== "unavailable");
+      results.items = results.items.filter(
+        (item) => item.available !== "unavailable",
+      );
       while (results.items.length < 22 && hasNextPage) {
         const next = await doSearch(pageData, q, branch, {
           "$Toolbar$0_3.x": "29",
           "$Toolbar$0_3.y": "28",
         });
-        results.items.push(...next.results.items.filter((item) => item.available !== "unavailable"));
+        results.items.push(
+          ...next.results.items.filter(
+            (item) => item.available !== "unavailable",
+          ),
+        );
         pageData = next.pageData;
         hasNextPage = next.hasNextPage;
       }
@@ -235,7 +250,9 @@ app.get("/api/search", async (req, res) => {
       }
     }
 
-    const jsessionid = pageData.formAction.match(/jsessionid=([A-F0-9]+)/)![1];
+    const jsessionid = pageData.cookies
+      .find((c) => c.startsWith("JSESSIONID="))!
+      .split("=")[1];
 
     for (const item of results.items) {
       if (item.coverUrl.startsWith(`${OPAC_BASE}/`)) {
@@ -250,7 +267,7 @@ app.get("/api/search", async (req, res) => {
       path: "/coverproxy",
     });
     res.json(results);
-  } catch {
+  } catch (e) {
     res.status(502).json({
       error: "Failed to fetch results from library system",
     });
