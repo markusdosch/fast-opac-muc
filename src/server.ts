@@ -88,7 +88,7 @@ async function doSearch(
     params.set(name, value);
   }
   params.set("$Autosuggest", query);
-  params.set("select", branch ?? "Bitte auswählen");
+  params.set("$Select", branch ?? "Bitte auswählen");
   if (extraParams) {
     for (const [name, value] of Object.entries(extraParams)) {
       params.set(name, value);
